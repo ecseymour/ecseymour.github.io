@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Python Dissertation DemoEric Seymour</title>
+
+    <link rel="stylesheet" href="/theme/css/main.css">
+    <link rel="stylesheet" href="/theme/css/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <!-- <div><img src="" class="grv-img"/></div> -->
+        <div class="title"><a href="/">Eric Seymour </a></div>
+        <div class="sub-title">Ph.D. Candidate, Urban Planner</div>
+
+<p>
+  <div class="view"><a href="/pdfs/seymour_cv.pdf">Curriculum Vitae</a></div>
+  <div class="view"><a href="http://www.umich.edu/~detsch/">Detroit School</a></div>
+  <div class="view"><a href="mailto:eseymour@umich.edu">Contact</a></div>
+  <div class="view"><a href="/pages/about.html">About</a></div>
+  <div class="view"><a href="/pages/teaching.html">Teaching</a></div>
+  <div class="view"><a href="/archives.html">Archives</a></div>
+</p>
+</p>
+
+<!-- Social links -->
+<!--  -->
+      </header>
+      <section>
+<section id="content" class="body">
+  <article>
+      <div class="article-title">
+        Python Dissertation Demo
+      </div>
+
+    <div class="entry-content">
+<p>
+<small>
+<abbr class="published" title="2015-12-21T00:00:00-05:00">
+  Mon 21 December 2015
+</abbr> | 
+  tags: 
+    <a href="/tag/bigdata.html">BigData</a>, 
+ -- (<a href="/python-dissertation-demo.html" rel="bookmark">permalink</a>)
+</small>
+</p>      <p>I will here present a brief demonstration of my use of Python for data analysis. While I was trained to use Stata, I moved to Python (and R, to a limited extent) because of my desire for an open source tool. I wanted to be able to perform analysis anytime, anywhere - not just in the computer lab on campus. I was also drawn to Python because of its powerful data wrangling capabilities.</p>
+<p>The precipitating event for my full-blown move to Python was my need to create a post-foreclosure pathways dataset for my dissertation. Using real-estate transaction records in hand, I needed to identify which properties went though mortgage foreclosure and which records were REO sales for those properties (and many other things, but these were the two most important data points). I needed to iterate through these records applying regular expressions and keyword searches to sort transfers and other miscellaneous records from the "true" REO sales. I am sure someone could code this in Stata, but I would have needed to move into the computer lab to crack the code. Instead, I could use my laptop - at home, on the bus, anywhere - to wrangle the data to suit my needs. </p>
+<p>The more I worked in Python, the more I saw its advantages. I can use Python to seamlessly integrate webscraping, data cleaning, database creating and querying, statistical analysis and mapping! No more jumping between Stata, Excel, and ArcGIS!</p>
+<p>I'll show a very brief example of how I access my dissertation database for summary information below.</p>
+<div class="highlight"><pre><span></span><span class="c1"># First, I need to import the relevant libraries</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span> <span class="c1"># amazing data analysis library! creates DataFrame objects similar to R</span>
+<span class="kn">import</span> <span class="nn">sqlite3</span> <span class="kn">as</span> <span class="nn">sql</span> <span class="c1"># core library for interacting with sqlite databases</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span> <span class="c1"># plotting library</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;ggplot&#39;</span><span class="p">)</span> 
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># change directory to source data folder</span>
+<span class="bp">self</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s2">&quot;__file__&quot;</span><span class="p">)</span> <span class="c1"># get current path</span>
+<span class="p">(</span><span class="n">fpath</span><span class="p">,</span><span class="n">fname</span><span class="p">)</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="c1"># split file name from directory</span>
+<span class="n">scripts</span> <span class="o">=</span> <span class="n">fpath</span> <span class="c1"># set scripts folder as path from line above</span>
+<span class="k">print</span> <span class="s2">&quot;scripts:&quot;</span><span class="p">,</span> <span class="n">scripts</span>
+<span class="n">parent</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s2">&quot;__file__&quot;</span> <span class="o">+</span> <span class="s2">&quot;/../../&quot;</span><span class="p">)</span> <span class="c1"># get parent path</span>
+<span class="k">print</span> <span class="s2">&quot;parent:&quot;</span><span class="p">,</span> <span class="n">parent</span>
+<span class="n">intermediate</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">parent</span><span class="o">+</span><span class="s2">&quot;/intermediate&quot;</span><span class="p">)</span>
+<span class="k">print</span> <span class="s2">&quot;intermediate: &quot;</span><span class="p">,</span> <span class="n">intermediate</span>
+<span class="n">images</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">parent</span><span class="o">+</span><span class="s2">&quot;/images&quot;</span><span class="p">)</span>
+<span class="k">print</span> <span class="s2">&quot;images:&quot;</span><span class="p">,</span> <span class="n">images</span>
+<span class="c1">#change dir</span>
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">intermediate</span><span class="p">)</span>
+<span class="n">retval</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>scripts: /bigdrive/sync_contents/dissertation/quantitative/scripts
+parent: /bigdrive/sync_contents/dissertation/quantitative
+intermediate:  /bigdrive/sync_contents/dissertation/quantitative/intermediate
+images: /bigdrive/sync_contents/dissertation/quantitative/images
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># how many completed mortgageg foreclosures per year?</span>
+<span class="c1"># connect to database</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">sql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;dissertation.db&quot;</span><span class="p">)</span> 
+<span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+<span class="c1"># supply SQL query to database and create pandas DataFrame object from result</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">    SELECT year, COUNT(*) AS Foreclosures</span>
+<span class="s1">    FROM reo_pathways</span>
+<span class="s1">    GROUP BY year;</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">,</span> <span class="n">con</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+<span class="n">con</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">df</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Foreclosures</th>
+    </tr>
+    <tr>
+      <th>year</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2005</th>
+      <td>6665</td>
+    </tr>
+    <tr>
+      <th>2006</th>
+      <td>11518</td>
+    </tr>
+    <tr>
+      <th>2007</th>
+      <td>15160</td>
+    </tr>
+    <tr>
+      <th>2008</th>
+      <td>10934</td>
+    </tr>
+    <tr>
+      <th>2009</th>
+      <td>6274</td>
+    </tr>
+    <tr>
+      <th>2010</th>
+      <td>6493</td>
+    </tr>
+    <tr>
+      <th>2011</th>
+      <td>4864</td>
+    </tr>
+    <tr>
+      <th>2012</th>
+      <td>4530</td>
+    </tr>
+    <tr>
+      <th>2013</th>
+      <td>2922</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># let&#39;s plot these data</span>
+<span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;matplotlib.axes._subplots.AxesSubplot at 0x7fbb6469ad90&gt;
+</pre></div>
+
+
+<p><img alt="png" src="python_demo_files/python_demo_4_1.png"></p>
+<div class="highlight"><pre><span></span><span class="c1"># what is the year over year percent change in completed forclosures?</span>
+<span class="n">df</span><span class="o">.</span><span class="n">pct_change</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Foreclosures</th>
+    </tr>
+    <tr>
+      <th>year</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2005</th>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2006</th>
+      <td>0.728132</td>
+    </tr>
+    <tr>
+      <th>2007</th>
+      <td>0.316201</td>
+    </tr>
+    <tr>
+      <th>2008</th>
+      <td>-0.278760</td>
+    </tr>
+    <tr>
+      <th>2009</th>
+      <td>-0.426194</td>
+    </tr>
+    <tr>
+      <th>2010</th>
+      <td>0.034906</td>
+    </tr>
+    <tr>
+      <th>2011</th>
+      <td>-0.250886</td>
+    </tr>
+    <tr>
+      <th>2012</th>
+      <td>-0.068668</td>
+    </tr>
+    <tr>
+      <th>2013</th>
+      <td>-0.354967</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># supply the plot() function to the dataframe to visualize the data</span>
+<span class="c1"># plot can be passed after other functions, like pct_change</span>
+<span class="n">df</span><span class="o">.</span><span class="n">pct_change</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;matplotlib.axes._subplots.AxesSubplot at 0x7fbb6469a790&gt;
+</pre></div>
+
+
+<p><img alt="png" src="python_demo_files/python_demo_6_1.png"></p>
+<p>That's a lot of mortgage foreclosures, most of which entered REO inventory, that is, they became bank owned. What were Fannie, Freddie, HUD, and all other lenders' inventories over time? To calculate stocks for a given year, I decided to substract the cumulative total REO acquisitions by the cumulative total REO sales. First, the REO acquisitions...</p>
+<div class="highlight"><pre><span></span><span class="c1"># create an empty DataFrame with years as rows and entities as columns</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">2005</span><span class="p">,</span><span class="mi">2014</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;FANNIE&quot;</span><span class="p">,</span> <span class="s2">&quot;FREDDIE&quot;</span><span class="p">,</span> <span class="s2">&quot;HUD&quot;</span><span class="p">,</span> <span class="s2">&quot;LENDER&quot;</span><span class="p">])</span>
+<span class="n">df</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>FANNIE</th>
+      <th>FREDDIE</th>
+      <th>HUD</th>
+      <th>LENDER</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2005</th>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2006</th>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2007</th>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2008</th>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2009</th>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2010</th>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2011</th>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2012</th>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2013</th>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># iterate through names, search for acquisitions by year using SQL, populate DataFrame</span>
+<span class="n">names</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">sql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;dissertation.db&quot;</span><span class="p">)</span>
+<span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+    <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        SELECT year, COUNT(*)</span>
+<span class="s1">        FROM reo_pathways</span>
+<span class="s1">        WHERE reo_owner_category = ?</span>
+<span class="s1">        GROUP BY year;</span>
+<span class="s1">        &#39;&#39;&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">n</span><span class="p">]))</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">cur</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="n">year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">year</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">count</span>
+
+<span class="n">df</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>FANNIE</th>
+      <th>FREDDIE</th>
+      <th>HUD</th>
+      <th>LENDER</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2005</th>
+      <td>616</td>
+      <td>148</td>
+      <td>821</td>
+      <td>4725</td>
+    </tr>
+    <tr>
+      <th>2006</th>
+      <td>838</td>
+      <td>200</td>
+      <td>1136</td>
+      <td>9032</td>
+    </tr>
+    <tr>
+      <th>2007</th>
+      <td>1110</td>
+      <td>322</td>
+      <td>1284</td>
+      <td>12106</td>
+    </tr>
+    <tr>
+      <th>2008</th>
+      <td>1877</td>
+      <td>600</td>
+      <td>1665</td>
+      <td>6523</td>
+    </tr>
+    <tr>
+      <th>2009</th>
+      <td>1946</td>
+      <td>372</td>
+      <td>1775</td>
+      <td>1892</td>
+    </tr>
+    <tr>
+      <th>2010</th>
+      <td>2758</td>
+      <td>200</td>
+      <td>1738</td>
+      <td>1530</td>
+    </tr>
+    <tr>
+      <th>2011</th>
+      <td>1918</td>
+      <td>212</td>
+      <td>948</td>
+      <td>1591</td>
+    </tr>
+    <tr>
+      <th>2012</th>
+      <td>1431</td>
+      <td>538</td>
+      <td>710</td>
+      <td>1657</td>
+    </tr>
+    <tr>
+      <th>2013</th>
+      <td>776</td>
+      <td>390</td>
+      <td>72</td>
+      <td>1472</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># I also want the cumulative sum of acquisitions</span>
+<span class="n">cum_acq</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span>
+<span class="n">cum_acq</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>FANNIE</th>
+      <th>FREDDIE</th>
+      <th>HUD</th>
+      <th>LENDER</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2005</th>
+      <td>616</td>
+      <td>148</td>
+      <td>821</td>
+      <td>4725</td>
+    </tr>
+    <tr>
+      <th>2006</th>
+      <td>1454</td>
+      <td>348</td>
+      <td>1957</td>
+      <td>13757</td>
+    </tr>
+    <tr>
+      <th>2007</th>
+      <td>2564</td>
+      <td>670</td>
+      <td>3241</td>
+      <td>25863</td>
+    </tr>
+    <tr>
+      <th>2008</th>
+      <td>4441</td>
+      <td>1270</td>
+      <td>4906</td>
+      <td>32386</td>
+    </tr>
+    <tr>
+      <th>2009</th>
+      <td>6387</td>
+      <td>1642</td>
+      <td>6681</td>
+      <td>34278</td>
+    </tr>
+    <tr>
+      <th>2010</th>
+      <td>9145</td>
+      <td>1842</td>
+      <td>8419</td>
+      <td>35808</td>
+    </tr>
+    <tr>
+      <th>2011</th>
+      <td>11063</td>
+      <td>2054</td>
+      <td>9367</td>
+      <td>37399</td>
+    </tr>
+    <tr>
+      <th>2012</th>
+      <td>12494</td>
+      <td>2592</td>
+      <td>10077</td>
+      <td>39056</td>
+    </tr>
+    <tr>
+      <th>2013</th>
+      <td>13270</td>
+      <td>2982</td>
+      <td>10149</td>
+      <td>40528</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># Now for sales...repopulate existing DataFrame</span>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+    <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        SELECT CAST(SUBSTR(reo_sale_date,1,4) AS INTEGER) AS year, COUNT(*)</span>
+<span class="s1">        FROM reo_pathways</span>
+<span class="s1">        WHERE reo_owner_category = ?</span>
+<span class="s1">        AND reo_sale_flag &gt;= 1</span>
+<span class="s1">        GROUP BY SUBSTR(reo_sale_date,1,4);</span>
+<span class="s1">            &#39;&#39;&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">n</span><span class="p">]))</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">cur</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="n">year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">year</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">count</span>
+
+<span class="n">df</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>FANNIE</th>
+      <th>FREDDIE</th>
+      <th>HUD</th>
+      <th>LENDER</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2005</th>
+      <td>35</td>
+      <td>11</td>
+      <td>8</td>
+      <td>388</td>
+    </tr>
+    <tr>
+      <th>2006</th>
+      <td>393</td>
+      <td>75</td>
+      <td>254</td>
+      <td>2871</td>
+    </tr>
+    <tr>
+      <th>2007</th>
+      <td>824</td>
+      <td>215</td>
+      <td>260</td>
+      <td>6412</td>
+    </tr>
+    <tr>
+      <th>2008</th>
+      <td>1460</td>
+      <td>506</td>
+      <td>311</td>
+      <td>12589</td>
+    </tr>
+    <tr>
+      <th>2009</th>
+      <td>1761</td>
+      <td>482</td>
+      <td>2908</td>
+      <td>7905</td>
+    </tr>
+    <tr>
+      <th>2010</th>
+      <td>1821</td>
+      <td>285</td>
+      <td>1960</td>
+      <td>1889</td>
+    </tr>
+    <tr>
+      <th>2011</th>
+      <td>2341</td>
+      <td>199</td>
+      <td>1577</td>
+      <td>1261</td>
+    </tr>
+    <tr>
+      <th>2012</th>
+      <td>1752</td>
+      <td>195</td>
+      <td>1026</td>
+      <td>1194</td>
+    </tr>
+    <tr>
+      <th>2013</th>
+      <td>1186</td>
+      <td>421</td>
+      <td>1007</td>
+      <td>1145</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># Let&#39;s take the cumulative sum of REO sales</span>
+<span class="n">cum_sales</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span>
+<span class="n">cum_sales</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>FANNIE</th>
+      <th>FREDDIE</th>
+      <th>HUD</th>
+      <th>LENDER</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2005</th>
+      <td>35</td>
+      <td>11</td>
+      <td>8</td>
+      <td>388</td>
+    </tr>
+    <tr>
+      <th>2006</th>
+      <td>428</td>
+      <td>86</td>
+      <td>262</td>
+      <td>3259</td>
+    </tr>
+    <tr>
+      <th>2007</th>
+      <td>1252</td>
+      <td>301</td>
+      <td>522</td>
+      <td>9671</td>
+    </tr>
+    <tr>
+      <th>2008</th>
+      <td>2712</td>
+      <td>807</td>
+      <td>833</td>
+      <td>22260</td>
+    </tr>
+    <tr>
+      <th>2009</th>
+      <td>4473</td>
+      <td>1289</td>
+      <td>3741</td>
+      <td>30165</td>
+    </tr>
+    <tr>
+      <th>2010</th>
+      <td>6294</td>
+      <td>1574</td>
+      <td>5701</td>
+      <td>32054</td>
+    </tr>
+    <tr>
+      <th>2011</th>
+      <td>8635</td>
+      <td>1773</td>
+      <td>7278</td>
+      <td>33315</td>
+    </tr>
+    <tr>
+      <th>2012</th>
+      <td>10387</td>
+      <td>1968</td>
+      <td>8304</td>
+      <td>34509</td>
+    </tr>
+    <tr>
+      <th>2013</th>
+      <td>11573</td>
+      <td>2389</td>
+      <td>9311</td>
+      <td>35654</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># Now to take the difference. Simply subtract the two DataFrame objects:</span>
+<span class="n">cum_acq</span> <span class="o">-</span> <span class="n">cum_sales</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>FANNIE</th>
+      <th>FREDDIE</th>
+      <th>HUD</th>
+      <th>LENDER</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2005</th>
+      <td>581</td>
+      <td>137</td>
+      <td>813</td>
+      <td>4337</td>
+    </tr>
+    <tr>
+      <th>2006</th>
+      <td>1026</td>
+      <td>262</td>
+      <td>1695</td>
+      <td>10498</td>
+    </tr>
+    <tr>
+      <th>2007</th>
+      <td>1312</td>
+      <td>369</td>
+      <td>2719</td>
+      <td>16192</td>
+    </tr>
+    <tr>
+      <th>2008</th>
+      <td>1729</td>
+      <td>463</td>
+      <td>4073</td>
+      <td>10126</td>
+    </tr>
+    <tr>
+      <th>2009</th>
+      <td>1914</td>
+      <td>353</td>
+      <td>2940</td>
+      <td>4113</td>
+    </tr>
+    <tr>
+      <th>2010</th>
+      <td>2851</td>
+      <td>268</td>
+      <td>2718</td>
+      <td>3754</td>
+    </tr>
+    <tr>
+      <th>2011</th>
+      <td>2428</td>
+      <td>281</td>
+      <td>2089</td>
+      <td>4084</td>
+    </tr>
+    <tr>
+      <th>2012</th>
+      <td>2107</td>
+      <td>624</td>
+      <td>1773</td>
+      <td>4547</td>
+    </tr>
+    <tr>
+      <th>2013</th>
+      <td>1697</td>
+      <td>593</td>
+      <td>838</td>
+      <td>4874</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># Let&#39;s plot it</span>
+<span class="n">stocks</span> <span class="o">=</span> <span class="n">cum_acq</span> <span class="o">-</span> <span class="n">cum_sales</span>
+<span class="n">stocks</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;matplotlib.axes._subplots.AxesSubplot at 0x7fbb38ec8b50&gt;
+</pre></div>
+
+
+<p><img alt="png" src="python_demo_files/python_demo_14_1.png"></p>
+<div class="highlight"><pre><span></span><span class="c1"># That looks right, but perhaps we want a stacked bar chart</span>
+<span class="n">stocks</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="n">stacked</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;matplotlib.axes._subplots.AxesSubplot at 0x7fbb6469a590&gt;
+</pre></div>
+
+
+<p><img alt="png" src="python_demo_files/python_demo_15_1.png"></p>
+<div class="highlight"><pre><span></span><span class="c1"># What about the share of total REO stocks possessed by each entity?</span>
+<span class="n">stocks</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">stocks</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;str&#39;</span><span class="p">)</span>
+<span class="n">stocks</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">stocks</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>&lt;matplotlib.axes._subplots.AxesSubplot at 0x7fbb34ec5890&gt;
+</pre></div>
+
+
+<p><img alt="png" src="python_demo_files/python_demo_16_1.png"></p>
+<p>With these tables and plots, we can see distinct differences in stocks between federal and private entities. Private entities experienced an early surge in REOs and rapidly disposed of their properties. Federal entities, Fannie Mae in particular, continued to see properties flow into inventory through 2010. This is largely due to the cancellation of HARP trial modifications. </p>
+<p>That's all I'll show here, but you can see how easy it is to integrate database work with R-style analysis. </p>
+<div class="highlight"><pre><span></span>
+</pre></div>
+    </div><!-- /.entry-content -->
+  </article>
+</section>
+      </section>
+      <footer>
+        <p><small>Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>. Theme based on Sundown by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <!-- Scale fix -->
+    <script>
+      var metas = document.getElementsByTagName('meta');
+      var i;
+      
+      if (navigator.userAgent.match(/iPhone/i)) {
+        for (i=0; i<metas.length; i++) {
+          if (metas[i].name == "viewport") {
+            metas[i].content = "width=device-width, minimum-scale=1.0, maximum-scale=1.0";
+          }
+        }
+      
+        document.addEventListener("gesturestart", gestureStart, false);
+      }
+
+      function gestureStart() {
+        for (i=0; i<metas.length; i++) {
+          if (metas[i].name == "viewport") {
+            metas[i].content = "width=device-width, minimum-scale=0.25, maximum-scale=1.6";
+          }
+        }
+      }
+    </script>
+  </body>
+</html>

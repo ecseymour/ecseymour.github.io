@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Parsing Landlord-Tenant RecordsEric Seymour</title>
+
+    <link rel="stylesheet" href="/theme/css/main.css">
+    <link rel="stylesheet" href="/theme/css/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <!-- <div><img src="" class="grv-img"/></div> -->
+        <div class="title"><a href="/">Eric Seymour </a></div>
+        <div class="sub-title">Ph.D. Candidate, Urban Planner</div>
+
+<p>
+  <div class="view"><a href="/pdfs/seymour_cv.pdf">Curriculum Vitae</a></div>
+  <div class="view"><a href="http://www.umich.edu/~detsch/">Detroit School</a></div>
+  <div class="view"><a href="mailto:eseymour@umich.edu">Contact</a></div>
+  <div class="view"><a href="/pages/about.html">About</a></div>
+  <div class="view"><a href="/pages/teaching.html">Teaching</a></div>
+  <div class="view"><a href="/archives.html">Archives</a></div>
+</p>
+</p>
+
+<!-- Social links -->
+<!--  -->
+      </header>
+      <section>
+<section id="content" class="body">
+  <article>
+      <div class="article-title">
+        Parsing Landlord-Tenant Records
+      </div>
+
+    <div class="entry-content">
+<p>
+<small>
+<abbr class="published" title="2016-12-30T00:00:00-05:00">
+  Fri 30 December 2016
+</abbr> | 
+  tags: 
+    <a href="/tag/evictions.html">Evictions</a>, 
+ -- (<a href="/parsing-landlord-tenant-records.html" rel="bookmark">permalink</a>)
+</small>
+</p>      <p>In this notebook, I will show what the landlord-tenant data from <a href="http://www.36thdistrictcourt.org/divisions-departments/general-civil-and-landlord-tenant/landlord-tenant">Michigan's 36th district court</a>, where Detroit is located, looks like.</p>
+<p>In the cell below, I collect and print the first 15 rows from the raw landlord-tenant data for 01/01/2009 through 12/31/2011.</p>
+<div class="highlight"><pre><span></span><span class="n">dataFile</span> <span class="o">=</span> <span class="s2">&quot;/home/eric/detroit_research_projects/data/LT/Filing_From_010109_-_123111.txt&quot;</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dataFile</span><span class="p">)</span> <span class="k">as</span> <span class="n">myfile</span><span class="p">:</span>
+    <span class="n">head</span> <span class="o">=</span> <span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="n">myfile</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">16</span><span class="p">)]</span>
+<span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">head</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">h</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>RUN DATE: 03/17/16 10:14AM                            36TH DISTRICT COURT                                                 PAGE   1
+
+                                                      421 MADISON AVENUE
+
+                                                      DETROIT              MI 48226
+
+                                                   MATTHEW REPORT 2/16/16 FILINGS
+
+Case Type  LT SP          File Date   10109-123111
+
+NAME             CASE NUMBER      FILE DATE        CLOSE DATE
+
+I01: 38500 N WOODWARD AVE             BLOOMFIELD        MI 48013
+
+JOHN HANCOCK LI  08339157          6/24/09          7/24/09
+
+P01: 25574 KILREIGH                   FARMINGTON HILLS  MI 48336
+
+WILLIAMS/COREY/  09300000          1/02/09
+
+D01: 18942 ASHTON                     DETROIT           MI 48223
+
+LOWRY/HOWARD/    09300000          1/02/09          1/12/09
+
+D02: 18942 ASHTON                     DETROIT           MI 48223
+
+LOWRY/YOWANDA/   09300000          1/02/09          1/12/09
+
+P01: 1342 FAIRHOLME                   GROSSE PTE WOODS  MI 48236
+
+PATERNA/SALVATO  09300002          1/02/09
+</pre></div>
+
+
+<p>These data are not in a database-ready format. What we can tell from this printout is that "P01" precedes the name of the first plaintiff, "D01" precedes the name of the first defendant, and "D02" represents the name of the second defendant. For any plaintiff or defendant, there are two lines containing data. The first row has the address and the second row has the name of plaintiff or defendant, the order number for the court action, and the date of the action. Because the relationship between plaintiff and defendant is one-to-many, I need to create separate tables for defendants and plaintiffs. I can then use the order number common between plaintiffs and defendants to relate plaintiffs to defendants for a particular action.</p>
+<p>In order to parse this data, I will use <a href="https://docs.python.org/2/library/re.html#">Python's regular expression library</a>. Regular expressions are strings consisting of special characters that can be used to find matching patterns in text. Regular expressions allow one to query text for subsrings using specialized, but flexible sets of rules.  </p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">re</span>
+</pre></div>
+
+
+<p>I will first try to collect all the data for plaintiffs. I will iterate through the records and find all records starting with "P01". There is only ever one plaintiff listed per action.</p>
+<div class="highlight"><pre><span></span><span class="n">iterobj</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">head</span><span class="p">)</span> <span class="c1"># make </span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">iterobj</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;P01&quot;</span><span class="p">):</span>
+        <span class="k">print</span> <span class="n">line</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="n">P01</span><span class="o">:</span> <span class="mi">25574</span> <span class="n">KILREIGH</span>                   <span class="n">FARMINGTON</span> <span class="n">HILLS</span>  <span class="n">MI</span> <span class="mi">48336</span>
+
+<span class="n">P01</span><span class="o">:</span> <span class="mi">1342</span> <span class="n">FAIRHOLME</span>                   <span class="n">GROSSE</span> <span class="n">PTE</span> <span class="n">WOODS</span>  <span class="n">MI</span> <span class="mi">48236</span>
+</pre></div>
+
+
+<p>Now I need to get the data from the line following the line starting with "P01"</p>
+<div class="highlight"><pre><span></span><span class="n">iterobj</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">head</span><span class="p">)</span> <span class="c1"># make </span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">iterobj</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;P01&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">next_line</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterobj</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s2">&quot;*&quot;</span><span class="o">*</span><span class="mi">75</span>
+            <span class="k">print</span> <span class="n">line</span>
+            <span class="k">print</span> <span class="n">next_line</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>***************************************************************************
+P01: 25574 KILREIGH                   FARMINGTON HILLS  MI 48336
+WILLIAMS/COREY/  09300000          1/02/09
+***************************************************************************
+P01: 1342 FAIRHOLME                   GROSSE PTE WOODS  MI 48236
+PATERNA/SALVATO  09300002          1/02/09
+</pre></div>
+
+
+<p>Now I need to pick out the individual pieces of data from each line so that they can be inserted into the relevant database columns. To parse the address, I will </p>
+<div class="highlight"><pre><span></span><span class="n">iterobj</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">head</span><span class="p">)</span> <span class="c1"># make </span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">iterobj</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;P01&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">next_line</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterobj</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s2">&quot;*&quot;</span><span class="o">*</span><span class="mi">75</span>
+            <span class="c1"># regex to extract street number and name</span>
+            <span class="c1"># capture substring btw space following colon after plaintiff number, i.e, &quot;P01&quot;</span>
+            <span class="c1"># through a substring of 2 consecutive spaces</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">r&#39;:*\s+([\dP].*?)(?:\s{2}|#|$)&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+                <span class="n">address</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s2">&quot;street address: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>***************************************************************************
+street address: 25574 KILREIGH
+***************************************************************************
+street address: 1342 FAIRHOLME
+</pre></div>
+
+
+<p>Now I will parse for city, state, and the plaintiffs's name, where each are available.</p>
+<div class="highlight"><pre><span></span><span class="n">iterobj</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">head</span><span class="p">)</span> <span class="c1"># make </span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">iterobj</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;P01&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">next_line</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterobj</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s2">&quot;*&quot;</span><span class="o">*</span><span class="mi">75</span>
+            <span class="c1"># regex to extract street number and name</span>
+            <span class="c1"># capture substring btw space following colon after plaintiff number</span>
+            <span class="c1"># through a substring of 2 consecutive spaces</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">r&#39;:[\sLF]*\s+([\dP].*?)(?:\s{2}|#|$)&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+                <span class="n">address</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># capture &#39;word&#39; substring between first 2+ space gap and second 2+ space gap </span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;\s{2}([\w].*?)\s{2}&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+                <span class="n">city</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># capture &#39;word&#39; substring between 2nd 2+ space gap and zip code, i.e., 5 digit substring</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;\s{2}.*\s{2}([\w].*?)\s\d{5}&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+                <span class="n">state</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;\s{2}.*\s{2}([\w]{2})$&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+                    <span class="n">state</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">state</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;([\w\s/]+)\s(\d{8})\s&#39;</span><span class="p">,</span> <span class="n">next_line</span><span class="p">)</span>
+            <span class="c1"># capture &#39;word&#39; substring preceding the court order number</span>
+            <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">print</span> <span class="s2">&quot;street address: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s2">&quot;city: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">city</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s2">&quot;state: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s2">&quot;plaintiff name: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>***************************************************************************
+street address: 25574 KILREIGH
+city: FARMINGTON HILLS
+state: MI
+plaintiff name: WILLIAMS COREY
+***************************************************************************
+street address: 1342 FAIRHOLME
+city: GROSSE PTE WOODS
+state: MI
+plaintiff name: PATERNA SALVATO
+</pre></div>
+
+
+<p>Now I have parsed the data and I can insert these records into a research database. To parse the defendant records, I follow a similar process. In short, I create a row with data for every defendant and plaintiff in the data. To see what the results look like, I will make some basic queries of the final database. I use SQLite, a server-less, file-based relational database for this work.</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sqlite3</span> <span class="kn">as</span> <span class="nn">sql</span>
+<span class="n">db</span> <span class="o">=</span> <span class="s2">&quot;/home/eric/detroit_research_projects/data/derived_data/lt_points.sqlite&quot;</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># retrieve first five rows from plaintiffs table</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">sql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+<span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+<span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1"> SELECT plaintiff_number, address, city, state, zip, name, order_number </span>
+<span class="s1"> FROM plaintiffs LIMIT 5;</span>
+<span class="s1"> &#39;&#39;&#39;</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">cur</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+<span class="n">con</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">row</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>(u&#39;P01&#39;, u&#39;13526 NORFOLK&#39;, u&#39;DETROIT&#39;, u&#39;MI&#39;, u&#39;48235&#39;, u&#39;BLACKSTONE COOP&#39;, u&#39;12300000&#39;)
+(u&#39;P01&#39;, u&#39;13526 NORFOLK&#39;, u&#39;DETROIT&#39;, u&#39;MI&#39;, u&#39;48235&#39;, u&#39;BLACKSTONE COOP&#39;, u&#39;12300001&#39;)
+(u&#39;P01&#39;, u&#39;13526 NORFOLK&#39;, u&#39;DETROIT&#39;, u&#39;MI&#39;, u&#39;48235&#39;, u&#39;BLACKSTONE COOP&#39;, u&#39;12300002&#39;)
+(u&#39;P01&#39;, u&#39;13526 NORFOLK&#39;, u&#39;DETROIT&#39;, u&#39;MI&#39;, u&#39;48235&#39;, u&#39;BLACKSTONE COOP&#39;, u&#39;12300003&#39;)
+(u&#39;P01&#39;, u&#39;13526 NORFOLK&#39;, u&#39;DETROIT&#39;, u&#39;MI&#39;, u&#39;48235&#39;, u&#39;BLACKSTONE COOP&#39;, u&#39;12300004&#39;)
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># retrieve first five rows from defendants table</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">sql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+<span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+<span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">    SELECT defendant_number, address, city, name, order_number</span>
+<span class="s1">    FROM defendants LIMIT 5;</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">cur</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+<span class="n">con</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">row</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>(u&#39;D01&#39;, u&#39;20470 CHEYENNE&#39;, u&#39;DETROIT&#39;, u&#39;ARNOLD CHARLES&#39;, u&#39;12300000&#39;)
+(u&#39;D01&#39;, u&#39;13221 W EIGHT MILE&#39;, u&#39;DETROIT&#39;, u&#39;MURRAY GAIL&#39;, u&#39;12300001&#39;)
+(u&#39;D01&#39;, u&#39;13304 N NORFOLK&#39;, u&#39;DETROIT&#39;, u&#39;SHABAZZ LATEEFA&#39;, u&#39;12300002&#39;)
+(u&#39;D01&#39;, u&#39;13280 N NORFOLK&#39;, u&#39;DETROIT&#39;, u&#39;MCKINNEY GREGOR&#39;, u&#39;12300003&#39;)
+(u&#39;D01&#39;, u&#39;13266 N NORFOLK&#39;, u&#39;DETROIT&#39;, u&#39;ALFRED ETHEL&#39;, u&#39;12300004&#39;)
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># show linked plaintiff and defendant records joined on order number </span>
+<span class="c1"># for records shown in the raw data at the top of this notebook</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">sql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+<span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+<span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">    SELECT A.plaintiff_number, A.name, B.defendant_number, B.name, B.address, B.city</span>
+<span class="s1">    FROM plaintiffs AS A JOIN defendants AS B ON A.order_number = B.order_number</span>
+<span class="s1">    WHERE A.order_number = &quot;09300000&quot;;</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">cur</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+<span class="n">con</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">row</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>(u&#39;P01&#39;, u&#39;WILLIAMS COREY&#39;, u&#39;D01&#39;, u&#39;LOWRY HOWARD&#39;, u&#39;18942 ASHTON&#39;, u&#39;DETROIT&#39;)
+(u&#39;P01&#39;, u&#39;WILLIAMS COREY&#39;, u&#39;D02&#39;, u&#39;LOWRY YOWANDA&#39;, u&#39;18942 ASHTON&#39;, u&#39;DETROIT&#39;)
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="c1"># how many eviction orders per year?</span>
+<span class="c1"># take the first four characters from the date field for the year, then group by that substring</span>
+<span class="c1"># put data into pandas DataFrame object</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">sql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+<span class="n">qry</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">    SELECT SUBSTR(open, 1, 4) AS year, COUNT(DISTINCT order_number) AS orders</span>
+<span class="s1">    FROM plaintiffs</span>
+<span class="s1">    WHERE open IS NOT NULL</span>
+<span class="s1">    GROUP BY SUBSTR(open, 1, 4);</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">)</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">qry</span><span class="p">,</span> <span class="n">con</span><span class="p">)</span>
+<span class="n">con</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="k">print</span> <span class="n">df</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span>   year  orders
+0  2009   34814
+1  2010   32645
+2  2011   34127
+3  2012   33134
+4  2013   25701
+5  2014   10049
+6  2015   10884
+7  2016    1467
+</pre></div>
+
+
+<p>Now let us see where landlord-tenant actions are spatially concentrated.</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="n">Image</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;images/ltmap.png&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;650&quot;</span><span class="p">)</span> 
+</pre></div>
+
+
+<p><img alt="png" src="LTrecords_files/LTrecords_20_0.png"></p>
+<p>I have embedded a map of the location of landlord-tenant actions. These data are not normalized, but I show the number located within regular hexagonal bins to make it easier to read than a map of the points themselves. These actions are located everywhere, but concentrated in places with multi-unit housing. </p>
+<div class="highlight"><pre><span></span>
+</pre></div>
+    </div><!-- /.entry-content -->
+  </article>
+</section>
+      </section>
+      <footer>
+        <p><small>Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>. Theme based on Sundown by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <!-- Scale fix -->
+    <script>
+      var metas = document.getElementsByTagName('meta');
+      var i;
+      
+      if (navigator.userAgent.match(/iPhone/i)) {
+        for (i=0; i<metas.length; i++) {
+          if (metas[i].name == "viewport") {
+            metas[i].content = "width=device-width, minimum-scale=1.0, maximum-scale=1.0";
+          }
+        }
+      
+        document.addEventListener("gesturestart", gestureStart, false);
+      }
+
+      function gestureStart() {
+        for (i=0; i<metas.length; i++) {
+          if (metas[i].name == "viewport") {
+            metas[i].content = "width=device-width, minimum-scale=0.25, maximum-scale=1.6";
+          }
+        }
+      }
+    </script>
+  </body>
+</html>

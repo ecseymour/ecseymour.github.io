@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Assessment Inequality in Wayne CountyEric Seymour</title>
+
+    <link rel="stylesheet" href="/theme/css/main.css">
+    <link rel="stylesheet" href="/theme/css/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <!-- <div><img src="" class="grv-img"/></div> -->
+        <div class="title"><a href="/">Eric Seymour </a></div>
+        <div class="sub-title">Ph.D. Candidate, Urban Planner</div>
+
+<p>
+  <div class="view"><a href="/pdfs/seymour_cv.pdf">Curriculum Vitae</a></div>
+  <div class="view"><a href="http://www.umich.edu/~detsch/">Detroit School</a></div>
+  <div class="view"><a href="mailto:eseymour@umich.edu">Contact</a></div>
+  <div class="view"><a href="/pages/about.html">About</a></div>
+  <div class="view"><a href="/pages/teaching.html">Teaching</a></div>
+  <div class="view"><a href="/archives.html">Archives</a></div>
+</p>
+</p>
+
+<!-- Social links -->
+<!--  -->
+      </header>
+      <section>
+<section id="content" class="body">
+  <article>
+      <div class="article-title">
+        Assessment Inequality in Wayne County
+      </div>
+
+    <div class="entry-content">
+<p>
+<small>
+<abbr class="published" title="2016-12-30T00:00:00-05:00">
+  Fri 30 December 2016
+</abbr> | 
+  tags: 
+    <a href="/tag/research.html">Research</a>, 
+ -- (<a href="/assessment-inequality.html" rel="bookmark">permalink</a>)
+</small>
+</p>      <p>I am currently working with <a href="http://www.freep.com/story/opinion/contributors/2016/09/01/detroits-tax-foreclosures-indefensible/89717644/">Bernadette Atuahene</a> to study the illegality of property tax assessments in Detroit and other municipalities in Wayne County, Michigan. State law requires that assessments are set at exactly half the market value of a given property. With the collapse of the housing market in the mid-2000s, property values have fallen substantially faster than assessments, leaving many residents with inflated property tax bills. This is thought to be a major contributor to the <a href="http://www.detroitnews.com/story/news/special-reports/2015/07/01/detroit-braces-flood-tax-foreclosures/29589915/">on-going tax foreclosure crisis in Detroit</a>. Bernadette has already found that assessments are widely set at illegal levels throughout Detroit and that owners of lower-value properties are disproportionately affected. </p>
+<p>My work involves examining assessment ratios, i.e., the ratio of assessed values in a given year to sale price in the year prior for arm's-length sales, throughout the county. I collected assessment records for all propreties in Wayne County for 2013 through 2016, and I linked them to arm's-length sales for 2012 through 2015, using data from RealtyTrac. In this notebook, I show the relationship betweeen municipal-level assessment ratios and median sale price for residential properties included in calculating those ratios.</p>
+<div class="highlight"><pre><span></span><span class="c1"># import libraries</span>
+<span class="kn">import</span> <span class="nn">sqlite3</span> <span class="kn">as</span> <span class="nn">sql</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="kn">as</span> <span class="nn">sns</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+</pre></div>
+
+
+<p>I have already linked sales to assessment records, so I will here query a table containing records at the property level, and then group them by municipality.</p>
+<div class="highlight"><pre><span></span><span class="n">db</span> <span class="o">=</span> <span class="s2">&quot;/home/eric/detroit_research_projects/data/derived_data/wayne_county_assessor.sqlite&quot;</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">sql</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+<span class="n">qry</span> <span class="o">=</span> <span class="s2">&quot;SELECT * FROM ratios;&quot;</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">qry</span><span class="p">,</span> <span class="n">con</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="s2">&quot;oid&quot;</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>year</th>
+      <th>sr_val_transfer</th>
+      <th>adjsev</th>
+      <th>ratio</th>
+      <th>cousub</th>
+    </tr>
+    <tr>
+      <th>oid</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1581219</th>
+      <td>2013</td>
+      <td>107000.0</td>
+      <td>58300.0</td>
+      <td>0.545</td>
+      <td>Trenton city</td>
+    </tr>
+    <tr>
+      <th>1759778</th>
+      <td>2013</td>
+      <td>149900.0</td>
+      <td>67300.0</td>
+      <td>0.449</td>
+      <td>Trenton city</td>
+    </tr>
+    <tr>
+      <th>1878570</th>
+      <td>2013</td>
+      <td>90000.0</td>
+      <td>53500.0</td>
+      <td>0.594</td>
+      <td>Trenton city</td>
+    </tr>
+    <tr>
+      <th>1410151</th>
+      <td>2013</td>
+      <td>160000.0</td>
+      <td>73800.0</td>
+      <td>0.461</td>
+      <td>Trenton city</td>
+    </tr>
+    <tr>
+      <th>1399144</th>
+      <td>2013</td>
+      <td>90000.0</td>
+      <td>53300.0</td>
+      <td>0.592</td>
+      <td>Trenton city</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>Which municipalities have the largest median assessment ratios and sales prices?</p>
+<div class="highlight"><pre><span></span><span class="c1"># calculate overall median assessment ratio</span>
+<span class="n">meds</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;cousub&quot;</span><span class="p">)[</span><span class="s2">&quot;ratio&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
+<span class="n">meds</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">meds</span><span class="p">)</span>
+<span class="n">meds</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">&quot;ratio&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ratio</th>
+    </tr>
+    <tr>
+      <th>cousub</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Ecorse city</th>
+      <td>1.2000</td>
+    </tr>
+    <tr>
+      <th>River Rouge city</th>
+      <td>1.1080</td>
+    </tr>
+    <tr>
+      <th>Hamtramck city</th>
+      <td>0.7430</td>
+    </tr>
+    <tr>
+      <th>Detroit city</th>
+      <td>0.7250</td>
+    </tr>
+    <tr>
+      <th>Inkster city</th>
+      <td>0.7210</td>
+    </tr>
+    <tr>
+      <th>Dearborn city</th>
+      <td>0.7140</td>
+    </tr>
+    <tr>
+      <th>Highland Park city</th>
+      <td>0.6865</td>
+    </tr>
+    <tr>
+      <th>Lincoln Park city</th>
+      <td>0.5985</td>
+    </tr>
+    <tr>
+      <th>Wayne city</th>
+      <td>0.5890</td>
+    </tr>
+    <tr>
+      <th>Melvindale city</th>
+      <td>0.5675</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="highlight"><pre><span></span><span class="c1"># calculate the overall median sale price and show the bottom values</span>
+<span class="n">meds</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;cousub&quot;</span><span class="p">)[</span><span class="s2">&quot;sr_val_transfer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
+<span class="n">meds</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">meds</span><span class="p">)</span>
+<span class="n">meds</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">&quot;sr_val_transfer&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+
+
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>sr_val_transfer</th>
+    </tr>
+    <tr>
+      <th>cousub</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Ecorse city</th>
+      <td>15000.0</td>
+    </tr>
+    <tr>
+      <th>River Rouge city</th>
+      <td>17000.0</td>
+    </tr>
+    <tr>
+      <th>Highland Park city</th>
+      <td>19250.0</td>
+    </tr>
+    <tr>
+      <th>Detroit city</th>
+      <td>24900.0</td>
+    </tr>
+    <tr>
+      <th>Inkster city</th>
+      <td>28000.0</td>
+    </tr>
+    <tr>
+      <th>Hamtramck city</th>
+      <td>28000.0</td>
+    </tr>
+    <tr>
+      <th>Harper Woods city</th>
+      <td>40000.0</td>
+    </tr>
+    <tr>
+      <th>Melvindale city</th>
+      <td>41250.0</td>
+    </tr>
+    <tr>
+      <th>Lincoln Park city</th>
+      <td>46050.0</td>
+    </tr>
+    <tr>
+      <th>Redford township</th>
+      <td>49900.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>We can see from the above truncated tables that several of the places with the highest assessment ratios are also among those with the lowest median sales prices, as expected. Let us now plot all places to explore this relationship.</p>
+<div class="highlight"><pre><span></span><span class="n">newdf</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;cousub&quot;</span><span class="p">)[[</span><span class="s2">&quot;sr_val_transfer&quot;</span><span class="p">,</span> <span class="s2">&quot;ratio&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">=</span><span class="n">newdf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;scatter&quot;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">&quot;sr_val_transfer&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;ratio&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">500000</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">newdf</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">point</span><span class="p">[</span><span class="s1">&#39;sr_val_transfer&#39;</span><span class="p">],</span> <span class="n">point</span><span class="p">[</span><span class="s1">&#39;ratio&#39;</span><span class="p">],</span> <span class="n">i</span><span class="p">)</span>
+</pre></div>
+
+
+<p><img alt="png" src="assessor_ratio_descriptives_bokeh_files/assessor_ratio_descriptives_bokeh_9_0.png"></p>
+<p>There is a clear "hockey stick" shape to this figure, with assessment ratios above 1.0 for the places with the lowest sale prices, but as sale prices increase, the points curve toward 0.5 and remain there as values increase. Follow <a href="my-super-title.html">this link</a> for an interactive plot.</p>
+    </div><!-- /.entry-content -->
+  </article>
+</section>
+      </section>
+      <footer>
+        <p><small>Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>. Theme based on Sundown by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <!-- Scale fix -->
+    <script>
+      var metas = document.getElementsByTagName('meta');
+      var i;
+      
+      if (navigator.userAgent.match(/iPhone/i)) {
+        for (i=0; i<metas.length; i++) {
+          if (metas[i].name == "viewport") {
+            metas[i].content = "width=device-width, minimum-scale=1.0, maximum-scale=1.0";
+          }
+        }
+      
+        document.addEventListener("gesturestart", gestureStart, false);
+      }
+
+      function gestureStart() {
+        for (i=0; i<metas.length; i++) {
+          if (metas[i].name == "viewport") {
+            metas[i].content = "width=device-width, minimum-scale=0.25, maximum-scale=1.6";
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
