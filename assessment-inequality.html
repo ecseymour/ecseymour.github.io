@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Assessment Inequality in Wayne CountyEric Seymour, PhD</title>
+    <title>Assessment Inequality in Wayne CountyEric Seymour</title>
 
     <link rel="stylesheet" href="/theme/css/main.css">
     <link rel="stylesheet" href="/theme/css/pygment_trac.css">
@@ -16,8 +16,8 @@
     <div class="wrapper">
       <header>
         <!-- <div><img src="" class="grv-img"/></div> -->
-        <div class="title"><a href="/">Eric Seymour, PhD </a></div>
-        <div class="sub-title"></div>
+        <div class="title"><a href="/">Eric Seymour </a></div>
+        <div class="sub-title">Ph.D. in Urban and Regional Planning</div>
 
 <p>
   <div class="view"><a href="/pdfs/seymour_cv.pdf">Curriculum Vitae</a></div>
@@ -42,15 +42,16 @@
     <div class="entry-content">
 <p>
 <small>
-<abbr class="published" title="2016-12-30T00:00:00-05:00">
-  Fri 30 December 2016
+<abbr class="published" title="2016-12-10T00:00:00-05:00">
+  Sat 10 December 2016
 </abbr> | 
   tags: 
-    <a href="/tag/research.html">Research</a>, 
+    <a href="/tag/assessments.html">assessments</a>, 
+    <a href="/tag/research.html">research</a>, 
  -- (<a href="/assessment-inequality.html" rel="bookmark">permalink</a>)
 </small>
 </p>      <p>I am currently working with <a href="http://www.freep.com/story/opinion/contributors/2016/09/01/detroits-tax-foreclosures-indefensible/89717644/">Bernadette Atuahene</a> to study the illegality of property tax assessments in Detroit and other municipalities in Wayne County, Michigan. State law requires that assessments are set at exactly half the market value of a given property. With the collapse of the housing market in the mid-2000s, property values have fallen substantially faster than assessments, leaving many residents with inflated property tax bills. This is thought to be a major contributor to the <a href="http://www.detroitnews.com/story/news/special-reports/2015/07/01/detroit-braces-flood-tax-foreclosures/29589915/">on-going tax foreclosure crisis in Detroit</a>. Bernadette has already found that assessments are widely set at illegal levels throughout Detroit and that owners of lower-value properties are disproportionately affected. </p>
-<p>My work involves examining assessment ratios, i.e., the ratio of assessed values in a given year to sale price in the year prior for arm's-length sales, throughout the county. I collected assessment records for all propreties in Wayne County for 2013 through 2016, and I linked them to arm's-length sales for 2012 through 2015, using data from RealtyTrac. In this notebook, I show the relationship betweeen municipal-level assessment ratios and median sale price for residential properties included in calculating those ratios.</p>
+<p>My work involves examining assessment ratios, i.e., the ratio of assessed values in a given year to sale price in the year prior for arm's-length sales, throughout the county. I collected assessment records for all properties in Wayne County for 2013 through 2016, and I linked them to arm's-length sales for 2012 through 2015, using data from RealtyTrac. In this notebook, I show the relationship between municipal-level assessment ratios and median sale price for residential properties included in calculating those ratios.</p>
 <div class="highlight"><pre><span></span><span class="c1"># import libraries</span>
 <span class="kn">import</span> <span class="nn">sqlite3</span> <span class="kn">as</span> <span class="nn">sql</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
